@@ -1,46 +1,111 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, closestCenter } from '@dnd-kit/core';
-import { Component } from '@/types';
-import { createComponent, addComponent, updateComponent, deleteComponent } from '@/lib/utils';
+import { Component, Page, Breakpoint, Project } from '@/types';
+import { createComponent, addComponent, updateComponent, deleteComponent, generateId } from '@/lib/utils';
+import { useHistory } from '@/hooks/useHistory';
 import ComponentLibrary from '@/components/ComponentLibrary';
 import Canvas from '@/components/Canvas';
 import PropertyPanel from '@/components/PropertyPanel';
 import PreviewRenderer from '@/components/PreviewRenderer';
-import { Eye, Save, Download } from 'lucide-react';
+import CSSEditor from '@/components/CSSEditor';
+import PageManager from '@/components/PageManager';
+import BreakpointSelector from '@/components/BreakpointSelector';
+import { exportToReact, exportToVue } from '@/lib/exporters';
+import { Eye, Download, Undo2, Redo2, Code, ChevronDown } from 'lucide-react';
 
 export default function Home() {
-  const [components, setComponents] = useState<Component[]>([]);
+  const [project, setProject] = useState<Project>({
+    id: 'current',
+    name: 'My Project',
+    pages: [{
+      id: generateId(),
+      name: 'Home',
+      components: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }],
+    currentPageId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+
+  const currentPage = project.pages.find(p => p.id === project.currentPageId) || project.pages[0];
+  const [components, setComponents] = useState<Component[]>(currentPage?.components || []);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [showCSSEditor, setShowCSSEditor] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>('desktop');
+
+  const history = useHistory(components);
+
+  // Initialize currentPageId on mount
+  useEffect(() => {
+    if (!project.currentPageId && project.pages.length > 0) {
+      setProject(prev => ({ ...prev, currentPageId: prev.pages[0].id }));
+    }
+  }, []);
+
+  // Update components when page changes
+  useEffect(() => {
+    if (currentPage) {
+      setComponents(currentPage.components || []);
+      setSelectedComponent(null);
+    }
+  }, [project.currentPageId]);
 
   // Load project from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('no-code-project');
     if (saved) {
       try {
-        const project = JSON.parse(saved);
-        setComponents(project.components || []);
+        const savedProject = JSON.parse(saved);
+        if (savedProject.pages && savedProject.pages.length > 0) {
+          setProject(savedProject);
+          if (savedProject.currentPageId) {
+            const page = savedProject.pages.find((p: Page) => p.id === savedProject.currentPageId);
+            if (page) {
+              setComponents(page.components || []);
+            }
+          }
+        }
       } catch (e) {
         console.error('Failed to load project:', e);
       }
     }
   }, []);
 
-  // Save project to localStorage whenever components change
+  // Save project to localStorage whenever it changes
   useEffect(() => {
-    if (components.length > 0) {
-      const project = {
-        id: 'current',
-        name: 'My Project',
-        components,
-        updatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('no-code-project', JSON.stringify(project));
-    }
-  }, [components]);
+    const updatedProject = {
+      ...project,
+      pages: project.pages.map(p => 
+        p.id === currentPage?.id 
+          ? { ...p, components, updatedAt: new Date().toISOString() }
+          : p
+      ),
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('no-code-project', JSON.stringify(updatedProject));
+  }, [components, project.pages.length]);
+
+  const updateComponents = useCallback((newComponents: Component[]) => {
+    setComponents(newComponents);
+    history.pushToHistory(newComponents);
+    
+    // Update project
+    setProject(prev => ({
+      ...prev,
+      pages: prev.pages.map(p =>
+        p.id === currentPage?.id
+          ? { ...p, components: newComponents, updatedAt: new Date().toISOString() }
+          : p
+      ),
+    }));
+  }, [currentPage?.id, history]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -48,17 +113,39 @@ export default function Home() {
 
     if (!over) return;
 
+    let newComponents = [...components];
+
     if (active.id.toString().startsWith('component-')) {
       const componentType = active.data.current?.type as Component['type'];
       const newComponent = createComponent(componentType);
       
       if (over.id === 'canvas') {
-        setComponents([...components, newComponent]);
+        newComponents = [...components, newComponent];
       } else {
         const parentId = typeof over.id === 'string' ? over.id : null;
-        setComponents(addComponent(components, parentId, newComponent));
+        newComponents = addComponent(components, parentId, newComponent);
+      }
+    } else if (active.id.toString().startsWith('template-')) {
+      const template = active.data.current?.template as Component;
+      if (template) {
+        // Deep clone template and regenerate IDs
+        const cloneTemplate = (comp: Component): Component => ({
+          ...comp,
+          id: generateId(),
+          children: comp.children?.map(cloneTemplate),
+        });
+        const clonedTemplate = cloneTemplate(template);
+        
+        if (over.id === 'canvas') {
+          newComponents = [...components, clonedTemplate];
+        } else {
+          const parentId = typeof over.id === 'string' ? over.id : null;
+          newComponents = addComponent(components, parentId, clonedTemplate);
+        }
       }
     }
+
+    updateComponents(newComponents);
   };
 
   const handleDragStart = (event: any) => {
@@ -68,26 +155,99 @@ export default function Home() {
   const handleUpdateComponent = (updates: Partial<Component>) => {
     if (!selectedComponent) return;
     
-    setComponents(updateComponent(components, selectedComponent.id, updates));
+    const newComponents = updateComponent(components, selectedComponent.id, updates);
+    updateComponents(newComponents);
     setSelectedComponent({ ...selectedComponent, ...updates });
   };
 
   const handleDeleteComponent = () => {
     if (!selectedComponent) return;
     
-    setComponents(deleteComponent(components, selectedComponent.id));
+    const newComponents = deleteComponent(components, selectedComponent.id);
+    updateComponents(newComponents);
     setSelectedComponent(null);
   };
 
-  const handleExport = () => {
-    const html = generateHTML(components);
-    const blob = new Blob([html], { type: 'text/html' });
+  const handleUndo = () => {
+    const previousState = history.undo();
+    if (previousState) {
+      setComponents(previousState);
+    }
+  };
+
+  const handleRedo = () => {
+    const nextState = history.redo();
+    if (nextState) {
+      setComponents(nextState);
+    }
+  };
+
+  const handlePageSelect = (pageId: string) => {
+    setProject(prev => ({ ...prev, currentPageId: pageId }));
+  };
+
+  const handlePageAdd = () => {
+    const newPage: Page = {
+      id: generateId(),
+      name: `Page ${project.pages.length + 1}`,
+      components: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setProject(prev => ({
+      ...prev,
+      pages: [...prev.pages, newPage],
+      currentPageId: newPage.id,
+    }));
+  };
+
+  const handlePageDelete = (pageId: string) => {
+    if (project.pages.length <= 1) return;
+    
+    setProject(prev => {
+      const newPages = prev.pages.filter(p => p.id !== pageId);
+      return {
+        ...prev,
+        pages: newPages,
+        currentPageId: newPages[0]?.id || '',
+      };
+    });
+  };
+
+  const handlePageRename = (pageId: string, newName: string) => {
+    setProject(prev => ({
+      ...prev,
+      pages: prev.pages.map(p => p.id === pageId ? { ...p, name: newName } : p),
+    }));
+  };
+
+  const handleExport = (format: 'html' | 'react' | 'vue') => {
+    let content = '';
+    let filename = '';
+    let mimeType = '';
+
+    if (format === 'html') {
+      content = generateHTML(components);
+      filename = 'website.html';
+      mimeType = 'text/html';
+    } else if (format === 'react') {
+      content = exportToReact(components);
+      filename = 'component.jsx';
+      mimeType = 'text/javascript';
+    } else if (format === 'vue') {
+      content = exportToVue(components);
+      filename = 'component.vue';
+      mimeType = 'text/plain';
+    }
+
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'website.html';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+    setShowExportMenu(false);
   };
 
   const generateHTML = (comps: Component[]): string => {
@@ -101,6 +261,8 @@ export default function Home() {
       switch (comp.type) {
         case 'container':
           return `<div style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</div>`;
+        case 'section':
+          return `<section style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</section>`;
         case 'heading':
           return `<h1 style="${styleString}">${comp.props.text || 'Heading'}</h1>`;
         case 'text':
@@ -110,11 +272,23 @@ export default function Home() {
         case 'image':
           return `<img src="${comp.props.src || ''}" alt="${comp.props.alt || ''}" style="${styleString}" />`;
         case 'input':
-          return `<div><label>${comp.props.label || ''}</label><input type="${comp.props.type || 'text'}" placeholder="${comp.props.placeholder || ''}" style="${styleString}" /></div>`;
+          return `<div style="${styleString}"><label>${comp.props.label || ''}</label><input type="${comp.props.type || 'text'}" placeholder="${comp.props.placeholder || ''}" /></div>`;
         case 'textarea':
-          return `<div><label>${comp.props.label || ''}</label><textarea placeholder="${comp.props.placeholder || ''}" style="${styleString}"></textarea></div>`;
+          return `<div style="${styleString}"><label>${comp.props.label || ''}</label><textarea placeholder="${comp.props.placeholder || ''}"></textarea></div>`;
         case 'form':
           return `<form style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</form>`;
+        case 'card':
+          return `<div class="card" style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</div>`;
+        case 'header':
+          return `<header style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</header>`;
+        case 'navigation':
+          return `<nav style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</nav>`;
+        case 'footer':
+          return `<footer style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</footer>`;
+        case 'link':
+          return `<a href="${comp.props.href || '#'}" style="${styleString}">${comp.props.text || 'Link'}</a>`;
+        case 'divider':
+          return `<hr style="${styleString}" />`;
         default:
           return '';
       }
@@ -141,11 +315,31 @@ export default function Home() {
 </html>`;
   };
 
+  const getCanvasWidth = () => {
+    switch (currentBreakpoint) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+      default: return '100%';
+    }
+  };
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showExportMenu && !(event.target as Element).closest('.relative')) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportMenu]);
+
   if (isPreviewMode) {
     return (
       <div className="h-screen flex flex-col">
         <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-800">Preview Mode</h1>
+          <h1 className="text-xl font-bold text-gray-800">Preview Mode - {currentPage?.name}</h1>
           <button
             onClick={() => setIsPreviewMode(false)}
             className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
@@ -185,6 +379,35 @@ export default function Home() {
             <span className="text-sm text-gray-500">Build websites without code</span>
           </div>
           <div className="flex items-center gap-2">
+            <BreakpointSelector
+              currentBreakpoint={currentBreakpoint}
+              onBreakpointChange={setCurrentBreakpoint}
+            />
+            <button
+              onClick={handleUndo}
+              disabled={!history.canUndo}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 size={18} />
+            </button>
+            <button
+              onClick={handleRedo}
+              disabled={!history.canRedo}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 size={18} />
+            </button>
+            {selectedComponent && (
+              <button
+                onClick={() => setShowCSSEditor(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                title="Edit CSS"
+              >
+                <Code size={18} />
+              </button>
+            )}
             <button
               onClick={() => setIsPreviewMode(true)}
               className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
@@ -192,24 +415,64 @@ export default function Home() {
               <Eye size={18} />
               Preview
             </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-            >
-              <Download size={18} />
-              Export HTML
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+              >
+                <Download size={18} />
+                Export
+                <ChevronDown size={16} />
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <button
+                    onClick={() => handleExport('html')}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
+                  >
+                    Export as HTML
+                  </button>
+                  <button
+                    onClick={() => handleExport('react')}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
+                  >
+                    Export as React
+                  </button>
+                  <button
+                    onClick={() => handleExport('vue')}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
+                  >
+                    Export as Vue
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
+
+        {/* Page Manager */}
+        <PageManager
+          pages={project.pages}
+          currentPageId={project.currentPageId || project.pages[0]?.id || ''}
+          onPageSelect={handlePageSelect}
+          onPageAdd={handlePageAdd}
+          onPageDelete={handlePageDelete}
+          onPageRename={handlePageRename}
+        />
 
         {/* Main Editor */}
         <div className="flex-1 flex overflow-hidden">
           <ComponentLibrary />
-          <Canvas
-            components={components}
-            selectedComponent={selectedComponent}
-            onSelectComponent={setSelectedComponent}
-          />
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ 
+            maxWidth: currentBreakpoint === 'desktop' ? '100%' : getCanvasWidth(),
+            margin: currentBreakpoint !== 'desktop' ? '0 auto' : '0'
+          }}>
+            <Canvas
+              components={components}
+              selectedComponent={selectedComponent}
+              onSelectComponent={setSelectedComponent}
+            />
+          </div>
           <PropertyPanel
             selectedComponent={selectedComponent}
             onUpdate={handleUpdateComponent}
@@ -226,7 +489,29 @@ export default function Home() {
           </div>
         ) : null}
       </DragOverlay>
+
+      {showCSSEditor && selectedComponent && (
+        <CSSEditor
+          component={selectedComponent}
+          onUpdate={(css) => {
+            // Parse CSS and update component
+            const styleObj: React.CSSProperties = {};
+            const lines = css.split('\n');
+            lines.forEach((line) => {
+              const trimmed = line.trim();
+              if (trimmed && trimmed.includes(':')) {
+                const [key, ...valueParts] = trimmed.split(':');
+                const value = valueParts.join(':').trim().replace(/;$/, '');
+                const camelKey = key.trim().replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+                (styleObj as any)[camelKey] = value;
+              }
+            });
+            handleUpdateComponent({ style: styleObj });
+            setShowCSSEditor(false);
+          }}
+          onClose={() => setShowCSSEditor(false)}
+        />
+      )}
     </DndContext>
   );
 }
-

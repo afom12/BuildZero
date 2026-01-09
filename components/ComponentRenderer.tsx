@@ -148,6 +148,110 @@ export default function ComponentRenderer({
           </form>
         );
 
+      case 'section':
+        return (
+          <section
+            className={baseClasses}
+            style={component.style}
+          >
+            {component.children?.map((child) => (
+              <ComponentRenderer
+                key={child.id}
+                component={child}
+                selectedComponent={selectedComponent}
+                onSelect={onSelect}
+              />
+            ))}
+          </section>
+        );
+
+      case 'card':
+        return (
+          <div
+            className={`${baseClasses} p-6 border border-gray-200 rounded-lg shadow-sm bg-white`}
+            style={component.style}
+          >
+            {component.children?.map((child) => (
+              <ComponentRenderer
+                key={child.id}
+                component={child}
+                selectedComponent={selectedComponent}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
+        );
+
+      case 'header':
+        return (
+          <header
+            className={`${baseClasses} p-4 border-b border-gray-200 bg-white`}
+            style={component.style}
+          >
+            {component.children?.map((child) => (
+              <ComponentRenderer
+                key={child.id}
+                component={child}
+                selectedComponent={selectedComponent}
+                onSelect={onSelect}
+              />
+            ))}
+          </header>
+        );
+
+      case 'navigation':
+        return (
+          <nav
+            className={`${baseClasses} p-4 border-b border-gray-200 bg-white`}
+            style={component.style}
+          >
+            {component.children?.map((child) => (
+              <ComponentRenderer
+                key={child.id}
+                component={child}
+                selectedComponent={selectedComponent}
+                onSelect={onSelect}
+              />
+            ))}
+          </nav>
+        );
+
+      case 'footer':
+        return (
+          <footer
+            className={`${baseClasses} p-6 border-t border-gray-200 bg-gray-50`}
+            style={component.style}
+          >
+            {component.children?.map((child) => (
+              <ComponentRenderer
+                key={child.id}
+                component={child}
+                selectedComponent={selectedComponent}
+                onSelect={onSelect}
+              />
+            ))}
+          </footer>
+        );
+
+      case 'link':
+        return (
+          <a
+            href={component.props.href || '#'}
+            className={`${baseClasses} text-primary-600 hover:text-primary-800 underline`}
+            style={component.style}
+          >
+            {component.props.text || 'Link'}
+          </a>
+        );
+
+      case 'divider':
+        return (
+          <hr
+            className={`${baseClasses} border-gray-300`}
+            style={component.style}
+          />
+        );
+
       default:
         return null;
     }

@@ -98,6 +98,78 @@ export default function PreviewRenderer({ component }: PreviewRendererProps) {
           </form>
         );
 
+      case 'section':
+        return (
+          <section key={comp.id} style={style}>
+            {comp.children?.map((child) => renderComponent(child))}
+          </section>
+        );
+
+      case 'card':
+        return (
+          <div
+            key={comp.id}
+            style={style}
+            className="p-6 border border-gray-200 rounded-lg shadow-sm bg-white"
+          >
+            {comp.children?.map((child) => renderComponent(child))}
+          </div>
+        );
+
+      case 'header':
+        return (
+          <header
+            key={comp.id}
+            style={style}
+            className="p-4 border-b border-gray-200 bg-white"
+          >
+            {comp.children?.map((child) => renderComponent(child))}
+          </header>
+        );
+
+      case 'navigation':
+        return (
+          <nav
+            key={comp.id}
+            style={style}
+            className="p-4 border-b border-gray-200 bg-white"
+          >
+            {comp.children?.map((child) => renderComponent(child))}
+          </nav>
+        );
+
+      case 'footer':
+        return (
+          <footer
+            key={comp.id}
+            style={style}
+            className="p-6 border-t border-gray-200 bg-gray-50"
+          >
+            {comp.children?.map((child) => renderComponent(child))}
+          </footer>
+        );
+
+      case 'link':
+        return (
+          <a
+            key={comp.id}
+            href={comp.props.href || '#'}
+            style={style}
+            className="text-primary-600 hover:text-primary-800 underline"
+          >
+            {comp.props.text || 'Link'}
+          </a>
+        );
+
+      case 'divider':
+        return (
+          <hr
+            key={comp.id}
+            style={style}
+            className="border-gray-300"
+          />
+        );
+
       default:
         return null;
     }

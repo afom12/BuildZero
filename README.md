@@ -8,22 +8,36 @@ A powerful drag-and-drop website builder that lets you create beautiful websites
 - Intuitive interface for building websites visually
 - Drag components from the library onto your canvas
 - Real-time preview of your changes
+- Undo/Redo functionality with keyboard shortcuts (Ctrl+Z / Ctrl+Y)
 
-🎨 **Component Library**
-- **Container** - Group and organize content
-- **Heading** - Add titles and headings
-- **Text** - Add paragraphs and text content
-- **Button** - Interactive buttons with customizable text
-- **Image** - Add images with URL support
-- **Input** - Text inputs with labels and placeholders
-- **Textarea** - Multi-line text inputs
-- **Form** - Form containers for grouping inputs
+🎨 **Component Library** (15+ Components)
+- **Layout**: Container, Section, Header, Footer
+- **Content**: Heading, Text, Image, Link, Divider
+- **Interactive**: Button, Input, Textarea, Form
+- **Advanced**: Card, Navigation
+
+📦 **Component Templates**
+- Pre-built templates for common layouts
+- Hero sections, feature cards, contact forms, navigation bars
+- One-click insertion of complete component groups
 
 ⚙️ **Property Panel**
 - Edit component properties in real-time
 - Customize colors, padding, margins
-- Configure text, labels, placeholders, and more
+- Configure text, labels, placeholders, links, and more
 - Delete components with one click
+- Custom CSS editor for advanced styling
+
+📱 **Responsive Design**
+- Breakpoint selector (Mobile, Tablet, Desktop)
+- Preview your design at different screen sizes
+- Responsive canvas that adapts to selected breakpoint
+
+📄 **Multiple Pages Support**
+- Create and manage multiple pages
+- Switch between pages seamlessly
+- Rename and delete pages
+- Each page maintains its own components
 
 👁️ **Preview Mode**
 - See your website exactly as it will appear
@@ -36,9 +50,10 @@ A powerful drag-and-drop website builder that lets you create beautiful websites
 - Resume editing anytime
 
 📥 **Export Functionality**
-- Export your website as clean HTML
-- Ready to deploy anywhere
-- Includes all styles and structure
+- **HTML Export** - Clean, production-ready HTML
+- **React Export** - Generate React components (.jsx)
+- **Vue Export** - Generate Vue components (.vue)
+- All exports include styles and structure
 
 ## Getting Started
 
@@ -79,18 +94,26 @@ npm run dev
 
 ```
 ├── app/
-│   ├── page.tsx          # Main editor page
-│   ├── layout.tsx        # Root layout
-│   └── globals.css       # Global styles
+│   ├── page.tsx              # Main editor page with all features
+│   ├── layout.tsx            # Root layout
+│   └── globals.css           # Global styles
 ├── components/
-│   ├── Canvas.tsx        # Main canvas/droppable area
-│   ├── ComponentLibrary.tsx  # Component palette
+│   ├── Canvas.tsx            # Main canvas/droppable area
+│   ├── ComponentLibrary.tsx # Component palette with templates
 │   ├── ComponentRenderer.tsx # Component rendering logic
-│   └── PropertyPanel.tsx     # Property editor panel
+│   ├── PreviewRenderer.tsx   # Preview mode renderer
+│   ├── PropertyPanel.tsx    # Property editor panel
+│   ├── CSSEditor.tsx         # Custom CSS editor modal
+│   ├── PageManager.tsx       # Page management component
+│   └── BreakpointSelector.tsx # Responsive breakpoint selector
+├── hooks/
+│   └── useHistory.ts         # Undo/Redo history management
 ├── lib/
-│   └── utils.ts          # Utility functions
+│   ├── utils.ts              # Utility functions
+│   ├── templates.ts          # Component templates library
+│   └── exporters.ts          # Export functions (React, Vue, HTML)
 ├── types/
-│   └── index.ts          # TypeScript type definitions
+│   └── index.ts              # TypeScript type definitions
 └── package.json
 ```
 
@@ -104,15 +127,18 @@ npm run dev
 
 ## Features Roadmap
 
-- [ ] Undo/Redo functionality
-- [ ] Multiple pages support
-- [ ] Responsive design breakpoints
-- [ ] More component types (cards, navigation, footer, etc.)
-- [ ] Custom CSS editor
-- [ ] Component templates
-- [ ] Collaboration features
-- [ ] Cloud storage integration
-- [ ] Export to various formats (React, Vue, etc.)
+- [x] ✅ Undo/Redo functionality
+- [x] ✅ Multiple pages support
+- [x] ✅ Responsive design breakpoints
+- [x] ✅ More component types (cards, navigation, footer, etc.)
+- [x] ✅ Custom CSS editor
+- [x] ✅ Component templates
+- [x] ✅ Export to various formats (React, Vue, etc.)
+- [ ] Collaboration features (coming soon)
+- [ ] Cloud storage integration (coming soon)
+- [ ] Advanced animations and transitions
+- [ ] Component marketplace
+- [ ] Version control and branching
 
 ## Contributing
 
