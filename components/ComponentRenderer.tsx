@@ -3,6 +3,7 @@
 import { Component } from '@/types';
 import { useDraggable } from '@dnd-kit/core';
 import { MouseEvent } from 'react';
+import { generateAnimationCSS } from '@/lib/animations';
 
 interface ComponentRendererProps {
   component: Component;
@@ -33,17 +34,45 @@ export default function ComponentRenderer({
     onSelect(component);
   };
 
+  const getAnimationStyle = () => {
+    if (!component.animation || component.animation.type === 'none') return {};
+    
+    const animationCSS = generateAnimationCSS(
+      component.animation.type || 'fadeIn',
+      component.animation.duration || '1s',
+      component.animation.delay || '0s',
+      component.animation.easing || 'ease'
+    );
+    
+    // Parse CSS string to object
+    const styleObj: React.CSSProperties = {};
+    animationCSS.split(';').forEach(rule => {
+      const [key, value] = rule.split(':').map(s => s.trim());
+      if (key && value) {
+        const camelKey = key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+        (styleObj as any)[camelKey] = value;
+      }
+    });
+    
+    return styleObj;
+  };
+
   const renderComponent = () => {
     const baseClasses = `relative ${
       isSelected ? 'ring-2 ring-primary-500 ring-offset-2' : ''
     }`;
+    
+    const combinedStyle = {
+      ...component.style,
+      ...getAnimationStyle(),
+    };
 
     switch (component.type) {
       case 'container':
         return (
           <div
             className={`${baseClasses} p-4 border border-gray-200 rounded`}
-            style={component.style}
+            style={combinedStyle}
           >
             {component.children?.map((child) => (
               <ComponentRenderer
@@ -134,7 +163,7 @@ export default function ComponentRenderer({
         return (
           <form
             className={`${baseClasses} p-4 border border-gray-200 rounded`}
-            style={component.style}
+            style={combinedStyle}
             onSubmit={(e) => e.preventDefault()}
           >
             {component.children?.map((child) => (

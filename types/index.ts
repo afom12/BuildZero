@@ -4,7 +4,33 @@ export interface Component {
   props: ComponentProps;
   children?: Component[];
   style?: React.CSSProperties;
+  animation?: AnimationConfig;
 }
+
+export interface AnimationConfig {
+  type?: AnimationType;
+  duration?: string;
+  delay?: string;
+  easing?: string;
+  trigger?: AnimationTrigger;
+}
+
+export type AnimationType = 
+  | 'fadeIn'
+  | 'fadeOut'
+  | 'slideInLeft'
+  | 'slideInRight'
+  | 'slideInUp'
+  | 'slideInDown'
+  | 'zoomIn'
+  | 'zoomOut'
+  | 'bounce'
+  | 'rotate'
+  | 'pulse'
+  | 'shake'
+  | 'none';
+
+export type AnimationTrigger = 'onLoad' | 'onHover' | 'onClick' | 'onScroll';
 
 export type ComponentType = 
   | 'container'
@@ -69,5 +95,44 @@ export interface ComponentTemplate {
   thumbnail?: string;
   component: Component;
   category: string;
+}
+
+export interface ComponentMarketplaceItem {
+  id: string;
+  name: string;
+  description: string;
+  author: string;
+  thumbnail?: string;
+  component: Component;
+  category: string;
+  tags: string[];
+  downloads: number;
+  rating: number;
+  createdAt: string;
+}
+
+export interface ProjectVersion {
+  id: string;
+  version: string;
+  name: string;
+  description?: string;
+  project: Project;
+  createdAt: string;
+  createdBy: string;
+  branch?: string;
+}
+
+export interface CollaborationSession {
+  id: string;
+  projectId: string;
+  participants: CollaborationParticipant[];
+  createdAt: string;
+}
+
+export interface CollaborationParticipant {
+  id: string;
+  name: string;
+  color: string;
+  cursor?: { x: number; y: number };
 }
 

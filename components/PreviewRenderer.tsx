@@ -1,19 +1,44 @@
 'use client';
 
 import { Component } from '@/types';
+import { generateAnimationCSS } from '@/lib/animations';
 
 interface PreviewRendererProps {
   component: Component;
 }
 
 export default function PreviewRenderer({ component }: PreviewRendererProps) {
+  const getAnimationStyle = (comp: Component) => {
+    if (!comp.animation || comp.animation.type === 'none') return {};
+    
+    const animationCSS = generateAnimationCSS(
+      comp.animation.type || 'fadeIn',
+      comp.animation.duration || '1s',
+      comp.animation.delay || '0s',
+      comp.animation.easing || 'ease'
+    );
+    
+    const styleObj: React.CSSProperties = {};
+    animationCSS.split(';').forEach(rule => {
+      const [key, value] = rule.split(':').map(s => s.trim());
+      if (key && value) {
+        const camelKey = key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+        (styleObj as any)[camelKey] = value;
+      }
+    });
+    
+    return styleObj;
+  };
+
   const renderComponent = (comp: Component): React.ReactNode => {
-    const style = comp.style || {};
+    const baseStyle = comp.style || {};
+    const animationStyle = getAnimationStyle(comp);
+    const style = { ...baseStyle, ...animationStyle };
 
     switch (comp.type) {
       case 'container':
         return (
-          <div key={comp.id} style={style}>
+          <div key={comp.id} style={style} className={comp.animation?.trigger === 'onHover' ? 'hover:animate-' + comp.animation.type : ''}>
             {comp.children?.map((child) => renderComponent(child))}
           </div>
         );
@@ -56,7 +81,7 @@ export default function PreviewRenderer({ component }: PreviewRendererProps) {
 
       case 'input':
         return (
-          <div key={comp.id} style={style}>
+          <div key={comp.id} style={style} className={comp.animation?.trigger === 'onHover' ? 'hover:animate-' + comp.animation.type : ''}>
             {comp.props.label && (
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {comp.props.label}
@@ -72,7 +97,7 @@ export default function PreviewRenderer({ component }: PreviewRendererProps) {
 
       case 'textarea':
         return (
-          <div key={comp.id} style={style}>
+          <div key={comp.id} style={style} className={comp.animation?.trigger === 'onHover' ? 'hover:animate-' + comp.animation.type : ''}>
             {comp.props.label && (
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {comp.props.label}

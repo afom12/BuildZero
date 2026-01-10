@@ -12,8 +12,11 @@ import PreviewRenderer from '@/components/PreviewRenderer';
 import CSSEditor from '@/components/CSSEditor';
 import PageManager from '@/components/PageManager';
 import BreakpointSelector from '@/components/BreakpointSelector';
+import Marketplace from '@/components/Marketplace';
+import VersionControl from '@/components/VersionControl';
+import CloudStoragePanel from '@/components/CloudStoragePanel';
 import { exportToReact, exportToVue } from '@/lib/exporters';
-import { Eye, Download, Undo2, Redo2, Code, ChevronDown } from 'lucide-react';
+import { Eye, Download, Undo2, Redo2, Code, ChevronDown, Store, GitBranch, Cloud, Users } from 'lucide-react';
 
 export default function Home() {
   const [project, setProject] = useState<Project>({
@@ -38,6 +41,10 @@ export default function Home() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showCSSEditor, setShowCSSEditor] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showVersionControl, setShowVersionControl] = useState(false);
+  const [showCloudStorage, setShowCloudStorage] = useState(false);
+  const [showCollaboration, setShowCollaboration] = useState(false);
   const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>('desktop');
 
   const history = useHistory(components);
@@ -409,6 +416,42 @@ export default function Home() {
               </button>
             )}
             <button
+              onClick={() => setShowMarketplace(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Component Marketplace"
+            >
+              <Store size={18} />
+            </button>
+            <button
+              onClick={() => setShowVersionControl(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Version Control"
+            >
+              <GitBranch size={18} />
+            </button>
+            <button
+              onClick={() => setShowCloudStorage(!showCloudStorage)}
+              className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                showCloudStorage
+                  ? 'bg-primary-500 text-white hover:bg-primary-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title="Cloud Storage"
+            >
+              <Cloud size={18} />
+            </button>
+            <button
+              onClick={() => setShowCollaboration(!showCollaboration)}
+              className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                showCollaboration
+                  ? 'bg-primary-500 text-white hover:bg-primary-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title="Collaboration"
+            >
+              <Users size={18} />
+            </button>
+            <button
               onClick={() => setIsPreviewMode(true)}
               className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
             >
@@ -473,12 +516,28 @@ export default function Home() {
               onSelectComponent={setSelectedComponent}
             />
           </div>
-          <PropertyPanel
-            selectedComponent={selectedComponent}
-            onUpdate={handleUpdateComponent}
-            onClose={() => setSelectedComponent(null)}
-            onDelete={handleDeleteComponent}
-          />
+          {showCloudStorage ? (
+            <CloudStoragePanel
+              currentProject={project}
+              onProjectLoad={(loadedProject) => {
+                setProject(loadedProject);
+                if (loadedProject.currentPageId) {
+                  const page = loadedProject.pages.find(p => p.id === loadedProject.currentPageId);
+                  if (page) {
+                    setComponents(page.components || []);
+                  }
+                }
+              }}
+              onClose={() => setShowCloudStorage(false)}
+            />
+          ) : (
+            <PropertyPanel
+              selectedComponent={selectedComponent}
+              onUpdate={handleUpdateComponent}
+              onClose={() => setSelectedComponent(null)}
+              onDelete={handleDeleteComponent}
+            />
+          )}
         </div>
       </div>
 
@@ -511,6 +570,71 @@ export default function Home() {
           }}
           onClose={() => setShowCSSEditor(false)}
         />
+      )}
+
+      {showMarketplace && (
+        <Marketplace
+          onClose={() => setShowMarketplace(false)}
+          onImport={(component) => {
+            const newComponent = { ...component, id: generateId() };
+            updateComponents([...components, newComponent]);
+            setShowMarketplace(false);
+          }}
+          onExport={(component) => {
+            // In real app, this would upload to marketplace
+            alert('Component exported to marketplace! (This is a demo)');
+          }}
+        />
+      )}
+
+      {showVersionControl && (
+        <VersionControl
+          project={project}
+          onVersionSelect={(version) => {
+            setProject(version.project);
+            if (version.project.currentPageId) {
+              const page = version.project.pages.find(p => p.id === version.project.currentPageId);
+              if (page) {
+                setComponents(page.components || []);
+              }
+            }
+            setShowVersionControl(false);
+          }}
+          onVersionCreate={(name, description, branch) => {
+            // Version creation is handled in VersionControl component
+            setShowVersionControl(false);
+          }}
+          onClose={() => setShowVersionControl(false)}
+        />
+      )}
+
+      {showCollaboration && (
+        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 max-w-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              <Users size={18} />
+              Collaboration
+            </h3>
+            <button
+              onClick={() => setShowCollaboration(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ×
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Real-time collaboration features coming soon! This will allow multiple users to edit projects simultaneously.
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span>You (Online)</span>
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+              Share link: <code className="bg-gray-100 px-1 rounded">coming-soon</code>
+            </div>
+          </div>
+        </div>
       )}
     </DndContext>
   );

@@ -2,6 +2,7 @@
 
 import { Component } from '@/types';
 import { X } from 'lucide-react';
+import AnimationPanel from './AnimationPanel';
 
 interface PropertyPanelProps {
   selectedComponent: Component | null;
@@ -268,6 +269,13 @@ export default function PropertyPanel({
             </div>
           </div>
         </div>
+
+        {/* Animations */}
+        <AnimationPanel
+          component={selectedComponent}
+          onUpdate={(animation) => onUpdate({ animation })}
+          onClose={() => {}}
+        />
 
         {/* Delete button */}
         <div className="border-t border-gray-200 pt-4">
