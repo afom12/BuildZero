@@ -77,6 +77,18 @@ export interface Project {
   currentPageId: string;
   createdAt: string;
   updatedAt: string;
+  settings?: ProjectSettings;
+}
+
+export interface ProjectSettings {
+  siteTitle?: string;
+  siteDescription?: string;
+  siteKeywords?: string;
+  favicon?: string;
+  ogImage?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  twitterCard?: string;
 }
 
 export interface EditorState {

@@ -15,8 +15,12 @@ import BreakpointSelector from '@/components/BreakpointSelector';
 import Marketplace from '@/components/Marketplace';
 import VersionControl from '@/components/VersionControl';
 import CloudStoragePanel from '@/components/CloudStoragePanel';
+import LayerPanel from '@/components/LayerPanel';
+import ProjectSettings from '@/components/ProjectSettings';
+import KeyboardShortcutsPanel from '@/components/KeyboardShortcutsPanel';
 import { exportToReact, exportToVue } from '@/lib/exporters';
-import { Eye, Download, Undo2, Redo2, Code, ChevronDown, Store, GitBranch, Cloud, Users } from 'lucide-react';
+import { copyComponent, pasteComponent, hasClipboard } from '@/lib/clipboard';
+import { Eye, Download, Undo2, Redo2, Code, ChevronDown, Store, GitBranch, Cloud, Users, Layers, Settings, Keyboard, Copy, Clipboard } from 'lucide-react';
 
 export default function Home() {
   const [project, setProject] = useState<Project>({
@@ -45,6 +49,9 @@ export default function Home() {
   const [showVersionControl, setShowVersionControl] = useState(false);
   const [showCloudStorage, setShowCloudStorage] = useState(false);
   const [showCollaboration, setShowCollaboration] = useState(false);
+  const [showLayerPanel, setShowLayerPanel] = useState(false);
+  const [showProjectSettings, setShowProjectSettings] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>('desktop');
 
   const history = useHistory(components);
@@ -342,6 +349,70 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showExportMenu]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+        return;
+      }
+
+      // Copy (Ctrl+C)
+      if (e.ctrlKey && e.key === 'c' && selectedComponent) {
+        e.preventDefault();
+        copyComponent(selectedComponent);
+      }
+
+      // Paste (Ctrl+V)
+      if (e.ctrlKey && e.key === 'v' && hasClipboard()) {
+        e.preventDefault();
+        const pasted = pasteComponent();
+        if (pasted) {
+          updateComponents([...components, pasted]);
+        }
+      }
+
+      // Duplicate (Ctrl+D)
+      if (e.ctrlKey && e.key === 'd' && selectedComponent) {
+        e.preventDefault();
+        const duplicated = { ...selectedComponent, id: generateId() };
+        updateComponents([...components, duplicated]);
+      }
+
+      // Delete (Delete/Backspace)
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedComponent) {
+        e.preventDefault();
+        handleDeleteComponent();
+      }
+
+      // Escape (Deselect)
+      if (e.key === 'Escape') {
+        setSelectedComponent(null);
+      }
+
+      // Preview (Ctrl+P)
+      if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        setIsPreviewMode(!isPreviewMode);
+      }
+
+      // Keyboard shortcuts panel (Ctrl+/)
+      if (e.ctrlKey && e.key === '/') {
+        e.preventDefault();
+        setShowKeyboardShortcuts(true);
+      }
+
+      // Settings (Ctrl+,)
+      if (e.ctrlKey && e.key === ',') {
+        e.preventDefault();
+        setShowProjectSettings(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedComponent, components, isPreviewMode]);
+
   if (isPreviewMode) {
     return (
       <div className="h-screen flex flex-col">
@@ -452,6 +523,58 @@ export default function Home() {
               <Users size={18} />
             </button>
             <button
+              onClick={() => setShowLayerPanel(!showLayerPanel)}
+              className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                showLayerPanel
+                  ? 'bg-primary-500 text-white hover:bg-primary-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title="Layer Panel"
+            >
+              <Layers size={18} />
+            </button>
+            <button
+              onClick={() => setShowProjectSettings(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Project Settings (Ctrl+,)"
+            >
+              <Settings size={18} />
+            </button>
+            <button
+              onClick={() => setShowKeyboardShortcuts(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Keyboard Shortcuts (Ctrl+/)"
+            >
+              <Keyboard size={18} />
+            </button>
+            {selectedComponent && (
+              <>
+                <button
+                  onClick={() => {
+                    copyComponent(selectedComponent);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                  title="Copy (Ctrl+C)"
+                >
+                  <Copy size={18} />
+                </button>
+                {hasClipboard() && (
+                  <button
+                    onClick={() => {
+                      const pasted = pasteComponent();
+                      if (pasted) {
+                        updateComponents([...components, pasted]);
+                      }
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                    title="Paste (Ctrl+V)"
+                  >
+                    <Clipboard size={18} />
+                  </button>
+                )}
+              </>
+            )}
+            <button
               onClick={() => setIsPreviewMode(true)}
               className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
             >
@@ -505,7 +628,26 @@ export default function Home() {
 
         {/* Main Editor */}
         <div className="flex-1 flex overflow-hidden">
-          <ComponentLibrary />
+          {showLayerPanel ? (
+            <LayerPanel
+              components={components}
+              selectedComponent={selectedComponent}
+              onSelect={setSelectedComponent}
+              onUpdate={(id, updates) => {
+                const newComponents = updateComponent(components, id, updates);
+                updateComponents(newComponents);
+              }}
+              onDelete={(id) => {
+                const newComponents = deleteComponent(components, id);
+                updateComponents(newComponents);
+                if (selectedComponent?.id === id) {
+                  setSelectedComponent(null);
+                }
+              }}
+            />
+          ) : (
+            <ComponentLibrary />
+          )}
           <div className="flex-1 flex flex-col overflow-hidden" style={{ 
             maxWidth: currentBreakpoint === 'desktop' ? '100%' : getCanvasWidth(),
             margin: currentBreakpoint !== 'desktop' ? '0 auto' : '0'
@@ -635,6 +777,22 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+
+      {showProjectSettings && (
+        <ProjectSettings
+          project={project}
+          onUpdate={(updates) => {
+            setProject({ ...project, ...updates });
+          }}
+          onClose={() => setShowProjectSettings(false)}
+        />
+      )}
+
+      {showKeyboardShortcuts && (
+        <KeyboardShortcutsPanel
+          onClose={() => setShowKeyboardShortcuts(false)}
+        />
       )}
     </DndContext>
   );

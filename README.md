@@ -27,6 +27,14 @@ A powerful drag-and-drop website builder that lets you create beautiful websites
 - Configure text, labels, placeholders, links, and more
 - Delete components with one click
 - Custom CSS editor for advanced styling
+- Animation controls with multiple triggers
+
+📋 **Layer Panel**
+- Visual component hierarchy
+- Show/hide components
+- Lock/unlock components
+- Navigate component tree
+- Manage z-index ordering
 
 📱 **Responsive Design**
 - Breakpoint selector (Mobile, Tablet, Desktop)
@@ -54,6 +62,21 @@ A powerful drag-and-drop website builder that lets you create beautiful websites
 - **React Export** - Generate React components (.jsx)
 - **Vue Export** - Generate Vue components (.vue)
 - All exports include styles and structure
+
+⚡ **Keyboard Shortcuts**
+- Copy/Paste components (Ctrl+C/Ctrl+V)
+- Duplicate components (Ctrl+D)
+- Undo/Redo (Ctrl+Z/Ctrl+Y)
+- Preview mode (Ctrl+P)
+- Quick access to settings and shortcuts
+- Full shortcuts panel (Ctrl+/)
+
+⚙️ **Project Settings**
+- SEO optimization (meta tags, descriptions)
+- Open Graph tags for social sharing
+- Twitter Card configuration
+- Favicon management
+- Site title and keywords
 
 ## Getting Started
 
@@ -127,6 +150,7 @@ npm run dev
 
 ## Features Roadmap
 
+### Core Features ✅
 - [x] ✅ Undo/Redo functionality
 - [x] ✅ Multiple pages support
 - [x] ✅ Responsive design breakpoints
@@ -134,11 +158,28 @@ npm run dev
 - [x] ✅ Custom CSS editor
 - [x] ✅ Component templates
 - [x] ✅ Export to various formats (React, Vue, etc.)
+
+### Advanced Features ✅
 - [x] ✅ Advanced animations and transitions
 - [x] ✅ Component marketplace
 - [x] ✅ Version control and branching
 - [x] ✅ Cloud storage integration (localStorage with Firebase-ready architecture)
 - [x] ✅ Collaboration features (UI ready, WebSocket integration pending)
+- [x] ✅ Layer Panel for component hierarchy management
+- [x] ✅ Copy/Paste and Duplicate functionality
+- [x] ✅ Project Settings (SEO, meta tags, favicon)
+- [x] ✅ Keyboard Shortcuts system
+- [x] ✅ Component Locking and Visibility controls
+
+### Future Enhancements 🚀
+- [ ] Media Library with image upload
+- [ ] Full Website Templates
+- [ ] Form Builder with backend integration
+- [ ] Advanced SEO tools
+- [ ] Alignment guides and snap-to-grid
+- [ ] Custom fonts integration
+- [ ] Code editor for custom JavaScript
+- [ ] Theme builder/color palette manager
 
 ## Contributing
 
