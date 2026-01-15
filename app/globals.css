@@ -100,3 +100,23 @@ body {
   20%, 40%, 60%, 80% { transform: translateX(10px); }
 }
 
+/* Grid Snapping */
+.snap-to-grid {
+  --grid-size: 10px;
+}
+
+.snap-to-grid * {
+  position: relative;
+}
+
+/* Primary color utilities */
+.bg-primary-50 { background-color: #eff6ff; }
+.bg-primary-100 { background-color: #dbeafe; }
+.bg-primary-200 { background-color: #bfdbfe; }
+.bg-primary-500 { background-color: #3b82f6; }
+.bg-primary-600 { background-color: #2563eb; }
+.text-primary-500 { color: #3b82f6; }
+.text-primary-600 { color: #2563eb; }
+.border-primary-500 { border-color: #3b82f6; }
+.ring-primary-500 { --tw-ring-color: #3b82f6; }
+

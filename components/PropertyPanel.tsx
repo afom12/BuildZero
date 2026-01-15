@@ -1,7 +1,7 @@
 'use client';
 
 import { Component } from '@/types';
-import { X } from 'lucide-react';
+import { X, Code } from 'lucide-react';
 import AnimationPanel from './AnimationPanel';
 
 interface PropertyPanelProps {
@@ -93,13 +93,27 @@ export default function PropertyPanel({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Image URL
               </label>
-              <input
-                type="text"
-                value={selectedComponent.props.src || ''}
-                onChange={(e) => handlePropChange('src', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={selectedComponent.props.src || ''}
+                  onChange={(e) => handlePropChange('src', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  onClick={() => {
+                    // This will be handled by parent component
+                    if ((window as any).openMediaLibrary) {
+                      (window as any).openMediaLibrary();
+                    }
+                  }}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
+                  title="Open Media Library"
+                >
+                  📁
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -114,6 +128,37 @@ export default function PropertyPanel({
             </div>
           </>
         )}
+
+        {/* Form Builder */}
+        {selectedComponent.type === 'form' && (
+          <div>
+            <button
+              onClick={() => {
+                if ((window as any).openFormBuilder) {
+                  (window as any).openFormBuilder(selectedComponent);
+                }
+              }}
+              className="w-full px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors text-sm"
+            >
+              Open Form Builder
+            </button>
+          </div>
+        )}
+
+        {/* Custom JavaScript */}
+        <div className="border-t border-gray-200 pt-4">
+          <button
+            onClick={() => {
+              if ((window as any).openCodeEditor) {
+                (window as any).openCodeEditor(selectedComponent);
+              }
+            }}
+            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-sm flex items-center justify-center gap-2"
+          >
+            <Code size={16} />
+            Custom JavaScript
+          </button>
+        </div>
 
         {/* Input properties */}
         {selectedComponent.type === 'input' && (

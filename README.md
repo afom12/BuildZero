@@ -78,6 +78,62 @@ A powerful drag-and-drop website builder that lets you create beautiful websites
 - Favicon management
 - Site title and keywords
 
+📸 **Media Library**
+- Drag-and-drop image upload
+- Image preview and management
+- Grid and list view modes
+- Search functionality
+- Base64 storage for offline use
+
+🎨 **Website Templates**
+- Pre-built complete website templates
+- Portfolio, Business, E-Commerce, Blog templates
+- One-click template application
+- Template preview and categories
+
+📝 **Form Builder**
+- Visual form field editor
+- Multiple field types (text, email, select, checkbox, radio, date, file)
+- Backend endpoint configuration
+- API key support
+- Success/error message customization
+- Redirect URL configuration
+
+🔍 **Advanced SEO Tools**
+- Schema.org JSON-LD markup generator
+- XML sitemap generator
+- robots.txt generator
+- SEO analysis and suggestions
+- Multiple schema types (Organization, Website, LocalBusiness, Article, Product)
+
+📐 **Alignment Guides & Grid**
+- Visual grid overlay
+- Snap-to-grid functionality
+- Adjustable grid size
+- Smart alignment guides
+- Component positioning assistance
+
+🔤 **Font Manager**
+- Google Fonts integration (10+ popular fonts)
+- Custom font upload
+- System font library
+- Font preview with sample text
+- Font weight selection
+
+💻 **Code Editor**
+- Custom JavaScript editor
+- Syntax validation
+- Code execution testing
+- Character and line count
+- Component-specific code injection
+
+🎨 **Theme Builder**
+- Color palette management
+- Pre-built theme presets (Default, Dark, Ocean, Forest, Sunset)
+- Custom palette creation
+- Color picker integration
+- Live theme preview
+
 ## Getting Started
 
 ### Prerequisites
@@ -128,7 +184,15 @@ npm run dev
 │   ├── PropertyPanel.tsx    # Property editor panel
 │   ├── CSSEditor.tsx         # Custom CSS editor modal
 │   ├── PageManager.tsx       # Page management component
-│   └── BreakpointSelector.tsx # Responsive breakpoint selector
+│   ├── BreakpointSelector.tsx # Responsive breakpoint selector
+│   ├── MediaLibrary.tsx      # Media upload and management
+│   ├── WebsiteTemplates.tsx  # Full website templates
+│   ├── FormBuilder.tsx       # Advanced form builder
+│   ├── AdvancedSEOTools.tsx # SEO tools (schema, sitemap, robots)
+│   ├── AlignmentGuides.tsx  # Grid and alignment guides
+│   ├── FontManager.tsx      # Font selection and management
+│   ├── CodeEditor.tsx        # JavaScript code editor
+│   └── ThemeBuilder.tsx      # Color palette and theme builder
 ├── hooks/
 │   └── useHistory.ts         # Undo/Redo history management
 ├── lib/
@@ -172,14 +236,14 @@ npm run dev
 - [x] ✅ Component Locking and Visibility controls
 
 ### Future Enhancements 🚀
-- [ ] Media Library with image upload
-- [ ] Full Website Templates
-- [ ] Form Builder with backend integration
-- [ ] Advanced SEO tools
-- [ ] Alignment guides and snap-to-grid
-- [ ] Custom fonts integration
-- [ ] Code editor for custom JavaScript
-- [ ] Theme builder/color palette manager
+- [x] ✅ Media Library with image upload
+- [x] ✅ Full Website Templates
+- [x] ✅ Form Builder with backend integration
+- [x] ✅ Advanced SEO tools
+- [x] ✅ Alignment guides and snap-to-grid
+- [x] ✅ Custom fonts integration
+- [x] ✅ Code editor for custom JavaScript
+- [x] ✅ Theme builder/color palette manager
 
 ## Contributing
 

@@ -18,9 +18,17 @@ import CloudStoragePanel from '@/components/CloudStoragePanel';
 import LayerPanel from '@/components/LayerPanel';
 import ProjectSettings from '@/components/ProjectSettings';
 import KeyboardShortcutsPanel from '@/components/KeyboardShortcutsPanel';
+import MediaLibrary from '@/components/MediaLibrary';
+import WebsiteTemplates from '@/components/WebsiteTemplates';
+import FormBuilder from '@/components/FormBuilder';
+import AdvancedSEOTools from '@/components/AdvancedSEOTools';
+import AlignmentGuides from '@/components/AlignmentGuides';
+import FontManager from '@/components/FontManager';
+import CodeEditor from '@/components/CodeEditor';
+import ThemeBuilder from '@/components/ThemeBuilder';
 import { exportToReact, exportToVue } from '@/lib/exporters';
 import { copyComponent, pasteComponent, hasClipboard } from '@/lib/clipboard';
-import { Eye, Download, Undo2, Redo2, Code, ChevronDown, Store, GitBranch, Cloud, Users, Layers, Settings, Keyboard, Copy, Clipboard } from 'lucide-react';
+import { Eye, Download, Undo2, Redo2, Code, ChevronDown, Store, GitBranch, Cloud, Users, Layers, Settings, Keyboard, Copy, Clipboard, Image, Layout, FileText, Search, Ruler, Type, Palette } from 'lucide-react';
 
 export default function Home() {
   const [project, setProject] = useState<Project>({
@@ -52,6 +60,15 @@ export default function Home() {
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [showProjectSettings, setShowProjectSettings] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showMediaLibrary, setShowMediaLibrary] = useState(false);
+  const [showWebsiteTemplates, setShowWebsiteTemplates] = useState(false);
+  const [showFormBuilder, setShowFormBuilder] = useState(false);
+  const [showAdvancedSEO, setShowAdvancedSEO] = useState(false);
+  const [showAlignmentGuides, setShowAlignmentGuides] = useState(false);
+  const [alignmentEnabled, setAlignmentEnabled] = useState(false);
+  const [showFontManager, setShowFontManager] = useState(false);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showThemeBuilder, setShowThemeBuilder] = useState(false);
   const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>('desktop');
 
   const history = useHistory(components);
@@ -349,6 +366,24 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showExportMenu]);
 
+  // Expose functions to window for PropertyPanel access
+  useEffect(() => {
+    (window as any).openMediaLibrary = () => setShowMediaLibrary(true);
+    (window as any).openFormBuilder = (comp: Component) => {
+      setSelectedComponent(comp);
+      setShowFormBuilder(true);
+    };
+    (window as any).openCodeEditor = (comp: Component) => {
+      setSelectedComponent(comp);
+      setShowCodeEditor(true);
+    };
+    return () => {
+      delete (window as any).openMediaLibrary;
+      delete (window as any).openFormBuilder;
+      delete (window as any).openCodeEditor;
+    };
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -546,6 +581,52 @@ export default function Home() {
               title="Keyboard Shortcuts (Ctrl+/)"
             >
               <Keyboard size={18} />
+            </button>
+            <button
+              onClick={() => setShowMediaLibrary(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Media Library"
+            >
+              <Image size={18} />
+            </button>
+            <button
+              onClick={() => setShowWebsiteTemplates(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Website Templates"
+            >
+              <Layout size={18} />
+            </button>
+            <button
+              onClick={() => setShowAdvancedSEO(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Advanced SEO Tools"
+            >
+              <Search size={18} />
+            </button>
+            <button
+              onClick={() => setShowAlignmentGuides(true)}
+              className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                alignmentEnabled
+                  ? 'bg-primary-500 text-white hover:bg-primary-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title="Alignment Guides"
+            >
+              <Ruler size={18} />
+            </button>
+            <button
+              onClick={() => setShowFontManager(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Font Manager"
+            >
+              <Type size={18} />
+            </button>
+            <button
+              onClick={() => setShowThemeBuilder(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              title="Theme Builder"
+            >
+              <Palette size={18} />
             </button>
             {selectedComponent && (
               <>
@@ -792,6 +873,105 @@ export default function Home() {
       {showKeyboardShortcuts && (
         <KeyboardShortcutsPanel
           onClose={() => setShowKeyboardShortcuts(false)}
+        />
+      )}
+
+      {showMediaLibrary && (
+        <MediaLibrary
+          onSelect={(media) => {
+            if (selectedComponent && selectedComponent.type === 'image') {
+              handleUpdateComponent({
+                props: {
+                  ...selectedComponent.props,
+                  src: media.url,
+                  alt: media.name,
+                },
+              });
+            }
+            setShowMediaLibrary(false);
+          }}
+          onClose={() => setShowMediaLibrary(false)}
+        />
+      )}
+
+      {showWebsiteTemplates && (
+        <WebsiteTemplates
+          onSelect={(template) => {
+            setProject({
+              ...project,
+              pages: template.pages,
+              currentPageId: template.pages[0]?.id || '',
+            });
+            if (template.pages[0]) {
+              setComponents(template.pages[0].components || []);
+            }
+            setShowWebsiteTemplates(false);
+          }}
+          onClose={() => setShowWebsiteTemplates(false)}
+        />
+      )}
+
+      {showFormBuilder && selectedComponent && (
+        <FormBuilder
+          component={selectedComponent}
+          onUpdate={handleUpdateComponent}
+          onClose={() => setShowFormBuilder(false)}
+        />
+      )}
+
+      {showAdvancedSEO && (
+        <AdvancedSEOTools
+          project={project}
+          onUpdate={(updates) => setProject({ ...project, ...updates })}
+          onClose={() => setShowAdvancedSEO(false)}
+        />
+      )}
+
+      {showAlignmentGuides && (
+        <AlignmentGuides
+          components={components}
+          selectedComponent={selectedComponent}
+          enabled={alignmentEnabled}
+          onToggle={setAlignmentEnabled}
+          onClose={() => setShowAlignmentGuides(false)}
+        />
+      )}
+
+      {showFontManager && (
+        <FontManager
+          onSelect={(font) => {
+            if (selectedComponent) {
+              handleUpdateComponent({
+                style: {
+                  ...selectedComponent.style,
+                  fontFamily: font.family,
+                },
+              });
+            }
+            setShowFontManager(false);
+          }}
+          onClose={() => setShowFontManager(false)}
+        />
+      )}
+
+      {showCodeEditor && selectedComponent && (
+        <CodeEditor
+          component={selectedComponent}
+          onUpdate={handleUpdateComponent}
+          onClose={() => setShowCodeEditor(false)}
+        />
+      )}
+
+      {showThemeBuilder && (
+        <ThemeBuilder
+          onSelect={(palette) => {
+            // Apply theme colors globally or to selected component
+            // This is a simplified implementation
+            document.documentElement.style.setProperty('--primary-color', palette.colors.primary);
+            document.documentElement.style.setProperty('--secondary-color', palette.colors.secondary);
+            setShowThemeBuilder(false);
+          }}
+          onClose={() => setShowThemeBuilder(false)}
         />
       )}
     </DndContext>
