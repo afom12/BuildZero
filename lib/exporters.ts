@@ -1,4 +1,5 @@
-import { Component } from '@/types';
+import { Component, Project } from '@/types';
+import { sanitizeHTML, sanitizeURL } from './security';
 
 export function exportToReact(components: Component[]): string {
   const renderComponent = (comp: Component, indent: number = 0): string => {
@@ -143,5 +144,109 @@ ${components.map(c => renderComponent(c, 1)).join('\n')}
 <style scoped>
 /* Component styles */
 </style>`;
+}
+
+export function generateHTML(components: Component[], project?: Project): string {
+  const renderComponent = (comp: Component): string => {
+    const styleString = comp.style
+      ? Object.entries(comp.style)
+          .map(([key, value]) => `${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value}`)
+          .join('; ')
+      : '';
+
+    const sanitizedProps = {
+      text: comp.props.text ? sanitizeHTML(comp.props.text) : '',
+      src: comp.props.src ? sanitizeURL(comp.props.src) : '',
+      alt: comp.props.alt ? sanitizeHTML(comp.props.alt) : '',
+      href: comp.props.href ? sanitizeURL(comp.props.href) : '',
+      placeholder: comp.props.placeholder ? sanitizeHTML(comp.props.placeholder) : '',
+      label: comp.props.label ? sanitizeHTML(comp.props.label) : '',
+    };
+
+    switch (comp.type) {
+      case 'container':
+        return `<div style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</div>`;
+      case 'section':
+        return `<section style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</section>`;
+      case 'heading':
+        return `<h1 style="${styleString}">${sanitizedProps.text || 'Heading'}</h1>`;
+      case 'text':
+        return `<p style="${styleString}">${sanitizedProps.text || 'Text'}</p>`;
+      case 'button':
+        return `<button style="${styleString}">${sanitizedProps.text || 'Button'}</button>`;
+      case 'image':
+        return `<img src="${sanitizedProps.src || ''}" alt="${sanitizedProps.alt || ''}" style="${styleString}" />`;
+      case 'input':
+        return `<div style="${styleString}"><label>${sanitizedProps.label || ''}</label><input type="${comp.props.type || 'text'}" placeholder="${sanitizedProps.placeholder || ''}" /></div>`;
+      case 'textarea':
+        return `<div style="${styleString}"><label>${sanitizedProps.label || ''}</label><textarea placeholder="${sanitizedProps.placeholder || ''}"></textarea></div>`;
+      case 'form':
+        return `<form style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</form>`;
+      case 'card':
+        return `<div class="card" style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</div>`;
+      case 'header':
+        return `<header style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</header>`;
+      case 'navigation':
+        return `<nav style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</nav>`;
+      case 'footer':
+        return `<footer style="${styleString}">${comp.children?.map(renderComponent).join('') || ''}</footer>`;
+      case 'link':
+        return `<a href="${sanitizedProps.href || '#'}" style="${styleString}">${sanitizedProps.text || 'Link'}</a>`;
+      case 'divider':
+        return `<hr style="${styleString}" />`;
+      default:
+        return '';
+    }
+  };
+
+  const settings = project?.settings || {};
+  const siteTitle = settings.siteTitle || project?.name || 'Generated Website';
+  const siteDescription = settings.siteDescription || '';
+  const siteKeywords = settings.siteKeywords || '';
+  const favicon = settings.favicon || '';
+  const ogTitle = settings.ogTitle || siteTitle;
+  const ogDescription = settings.ogDescription || siteDescription;
+  const ogImage = settings.ogImage || '';
+  const twitterCard = settings.twitterCard || 'summary';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${sanitizeHTML(siteTitle)}</title>
+  ${siteDescription ? `<meta name="description" content="${sanitizeHTML(siteDescription)}">` : ''}
+  ${siteKeywords ? `<meta name="keywords" content="${sanitizeHTML(siteKeywords)}">` : ''}
+  ${favicon ? `<link rel="icon" href="${sanitizeURL(favicon)}">` : ''}
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="${sanitizeHTML(ogTitle)}">
+  ${ogDescription ? `<meta property="og:description" content="${sanitizeHTML(ogDescription)}">` : ''}
+  ${ogImage ? `<meta property="og:image" content="${sanitizeURL(ogImage)}">` : ''}
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="${twitterCard}">
+  <meta name="twitter:title" content="${sanitizeHTML(ogTitle)}">
+  ${ogDescription ? `<meta name="twitter:description" content="${sanitizeHTML(ogDescription)}">` : ''}
+  ${ogImage ? `<meta name="twitter:image" content="${sanitizeURL(ogImage)}">` : ''}
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    * {
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  ${components.map(renderComponent).join('')}
+</body>
+</html>`;
 }
 

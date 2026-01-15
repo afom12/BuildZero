@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Project } from '@/types';
 import { Cloud, Upload, Download, Trash2, RefreshCw } from 'lucide-react';
 import { getCloudStorage } from '@/lib/cloudStorage';
+import { useToast } from '@/hooks/useToast';
+import ToastContainer from '@/components/Toast';
 
 interface CloudStoragePanelProps {
   currentProject: Project;
@@ -19,6 +21,7 @@ export default function CloudStoragePanel({
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const storage = getCloudStorage();
+  const toast = useToast();
 
   useEffect(() => {
     loadProjects();
@@ -41,10 +44,10 @@ export default function CloudStoragePanel({
     try {
       await storage.saveProject(currentProject);
       await loadProjects();
-      alert('Project saved to cloud successfully!');
+      toast.success('Project saved to cloud successfully!');
     } catch (error) {
       console.error('Failed to save project:', error);
-      alert('Failed to save project. Please try again.');
+      toast.error('Failed to save project. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -56,11 +59,11 @@ export default function CloudStoragePanel({
       const project = await storage.loadProject(projectId);
       if (project) {
         onProjectLoad(project);
-        alert('Project loaded successfully!');
+        toast.success('Project loaded successfully!');
       }
     } catch (error) {
       console.error('Failed to load project:', error);
-      alert('Failed to load project. Please try again.');
+      toast.error('Failed to load project. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -73,10 +76,10 @@ export default function CloudStoragePanel({
     try {
       await storage.deleteProject(projectId);
       await loadProjects();
-      alert('Project deleted successfully!');
+      toast.success('Project deleted successfully!');
     } catch (error) {
       console.error('Failed to delete project:', error);
-      alert('Failed to delete project. Please try again.');
+      toast.error('Failed to delete project. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -166,6 +169,7 @@ export default function CloudStoragePanel({
           ))}
         </div>
       )}
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </div>
   );
 }

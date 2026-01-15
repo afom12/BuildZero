@@ -26,9 +26,13 @@ import AlignmentGuides from '@/components/AlignmentGuides';
 import FontManager from '@/components/FontManager';
 import CodeEditor from '@/components/CodeEditor';
 import ThemeBuilder from '@/components/ThemeBuilder';
-import { exportToReact, exportToVue } from '@/lib/exporters';
+import { exportToReact, exportToVue, generateHTML } from '@/lib/exporters';
+import { sanitizeProps } from '@/lib/security';
+import ToastContainer from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
+import DeploymentPanel from '@/components/DeploymentPanel';
 import { copyComponent, pasteComponent, hasClipboard } from '@/lib/clipboard';
-import { Eye, Download, Undo2, Redo2, Code, ChevronDown, Store, GitBranch, Cloud, Users, Layers, Settings, Keyboard, Copy, Clipboard, Image, Layout, FileText, Search, Ruler, Type, Palette } from 'lucide-react';
+import { Eye, Download, Undo2, Redo2, Code, ChevronDown, Store, GitBranch, Cloud, Users, Layers, Settings, Keyboard, Copy, Clipboard, Image, Layout, FileText, Search, Ruler, Type, Palette, Rocket } from 'lucide-react';
 
 export default function Home() {
   const [project, setProject] = useState<Project>({
@@ -69,7 +73,10 @@ export default function Home() {
   const [showFontManager, setShowFontManager] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showThemeBuilder, setShowThemeBuilder] = useState(false);
+  const [showDeploymentPanel, setShowDeploymentPanel] = useState(false);
   const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>('desktop');
+  
+  const toast = useToast();
 
   const history = useHistory(components);
 
@@ -186,9 +193,15 @@ export default function Home() {
   const handleUpdateComponent = (updates: Partial<Component>) => {
     if (!selectedComponent) return;
     
+    // Sanitize props if they exist
+    if (updates.props) {
+      updates.props = sanitizeProps(updates.props);
+    }
+    
     const newComponents = updateComponent(components, selectedComponent.id, updates);
     updateComponents(newComponents);
     setSelectedComponent({ ...selectedComponent, ...updates });
+    toast.success('Component updated');
   };
 
   const handleDeleteComponent = () => {
@@ -197,6 +210,7 @@ export default function Home() {
     const newComponents = deleteComponent(components, selectedComponent.id);
     updateComponents(newComponents);
     setSelectedComponent(null);
+    toast.success('Component deleted');
   };
 
   const handleUndo = () => {
@@ -253,32 +267,37 @@ export default function Home() {
   };
 
   const handleExport = (format: 'html' | 'react' | 'vue') => {
-    let content = '';
-    let filename = '';
-    let mimeType = '';
+    try {
+      let content = '';
+      let filename = '';
+      let mimeType = '';
 
-    if (format === 'html') {
-      content = generateHTML(components);
-      filename = 'website.html';
-      mimeType = 'text/html';
-    } else if (format === 'react') {
-      content = exportToReact(components);
-      filename = 'component.jsx';
-      mimeType = 'text/javascript';
-    } else if (format === 'vue') {
-      content = exportToVue(components);
-      filename = 'component.vue';
-      mimeType = 'text/plain';
+      if (format === 'html') {
+        content = generateHTML(components, project);
+        filename = 'website.html';
+        mimeType = 'text/html';
+      } else if (format === 'react') {
+        content = exportToReact(components);
+        filename = 'component.jsx';
+        mimeType = 'text/javascript';
+      } else if (format === 'vue') {
+        content = exportToVue(components);
+        filename = 'component.vue';
+        mimeType = 'text/plain';
+      }
+
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      setShowExportMenu(false);
+      toast.success(`${format.toUpperCase()} file exported successfully`);
+    } catch (error: any) {
+      toast.error(`Export failed: ${error.message}`);
     }
-
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    setShowExportMenu(false);
   };
 
   const generateHTML = (comps: Component[]): string => {
@@ -662,6 +681,14 @@ export default function Home() {
               <Eye size={18} />
               Preview
             </button>
+            <button
+              onClick={() => setShowDeploymentPanel(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+              title="Deploy Website"
+            >
+              <Rocket size={18} />
+              Deploy
+            </button>
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -805,7 +832,7 @@ export default function Home() {
           }}
           onExport={(component) => {
             // In real app, this would upload to marketplace
-            alert('Component exported to marketplace! (This is a demo)');
+            toast.info('Component exported to marketplace! (This is a demo)');
           }}
         />
       )}
