@@ -1,4 +1,3 @@
-
 import { AnimationType } from '@/types';
 
 export const animationStyles: Record<AnimationType, string> = {
