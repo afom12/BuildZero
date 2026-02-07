@@ -1,4 +1,3 @@
-
 import { Project } from '@/types';
 
 // Cloud storage interface - can be implemented with Firebase, Supabase, etc.
