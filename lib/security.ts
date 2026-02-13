@@ -1,3 +1,4 @@
+
 /**
  * Security utilities for sanitizing user input and preventing XSS attacks
  */
